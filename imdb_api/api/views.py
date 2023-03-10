@@ -54,4 +54,16 @@ class APIJWTToken(APIView):
     то пользователь успешно регистрируется и в ответ получает token.
     """
 
-# Create your views here.
+    def post(self, request):
+        user = User.objects.get(email=request.data.get('email'))
+
+        if confirmation_code_generator.check_token(user, request.data.get('confirmation_code')):
+            user.is_active = True  # активация аккаунта пользователя
+            user.save()
+            data = {
+                'token': str(ConfirmationCodeSerializer.get_token(user))
+            }
+            serializer = TokenSerializer(data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
