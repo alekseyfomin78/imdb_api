@@ -1,19 +1,26 @@
 from rest_framework import serializers
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from api.models import Category, Genre
 from users.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        validators=[UniqueValidator(queryset=User.objects.all()), ],
-        error_messages={'required': 'The user with this username already exists.'},
+        validators=[UniqueValidator(
+            queryset=User.objects.all(),
+            message='The user with this username already exists.'
+        ), ],
         default=None,
     )
 
     email = serializers.EmailField(
-        validators=[UniqueValidator(queryset=User.objects.all()), ],
-        error_messages={'required': 'The user with this email already exists.'},
+        validators=[UniqueValidator(
+            queryset=User.objects.all(),
+            message='The user with this email already exists.'
+        ), ],
     )
 
     class Meta:
@@ -32,3 +39,12 @@ class ConfirmationCodeSerializer(TokenObtainPairSerializer):
 
 class TokenSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=250)
+
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = ('name', 'slug',)
+        lookup_field = 'slug'
+

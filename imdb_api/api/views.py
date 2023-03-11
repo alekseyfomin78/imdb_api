@@ -1,15 +1,23 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework import status, filters
+from rest_framework import status, filters, mixins
 from rest_framework.views import APIView
-from rest_framework.generics import ListCreateAPIView
+from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny
 from django.core.mail import EmailMessage
 from users.models import User
 from .confirmation_code import ConfirmationCodeGenerator
-from .permissions import IsNotAuth
-from .serializer import UserSerializer, ConfirmationCodeSerializer, TokenSerializer
+from .models import Category
+from .permissions import IsNotAuth, IsAdminOrReadOnly
+from .serializer import (
+    UserSerializer,
+    ConfirmationCodeSerializer,
+    TokenSerializer,
+    CategorySerializer,
+)
+
 
 confirmation_code_generator = ConfirmationCodeGenerator()
 
@@ -54,6 +62,8 @@ class APIJWTToken(APIView):
     то пользователь успешно регистрируется и в ответ получает token.
     """
 
+    permission_classes = [IsNotAuth]
+
     def post(self, request):
         user = User.objects.get(email=request.data.get('email'))
 
@@ -67,3 +77,18 @@ class APIJWTToken(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class CategoryViewSet(mixins.CreateModelMixin,
+                      mixins.ListModelMixin,
+                      mixins.DestroyModelMixin,
+                      viewsets.GenericViewSet):
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = PageNumberPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
