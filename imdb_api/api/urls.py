@@ -7,6 +7,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'categories', viewset=views.CategoryViewSet, basename='categories')
 router.register(r'genres', viewset=views.GenreViewSet, basename='genres')
+router.register(r'titles', viewset=views.TitleViewSet, basename='titles')
 # router.register(r'posts/(?P<post_id>\d+)/comments', CommentViewSet, basename='comments')
 # router.register(r'groups', GroupViewSet, basename='groups')
 # router.register(r'follow', FollowViewSet, basename='follow')

@@ -1,22 +1,27 @@
-from django.shortcuts import render
+from django.shortcuts import get_list_or_404
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status, filters, mixins
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny
 from django.core.mail import EmailMessage
 from users.models import User
 from .confirmation_code import ConfirmationCodeGenerator
-from .models import Category, Genre
+from .filters import TitleFilter
+from .models import Category, Genre, Title
 from .permissions import IsNotAuth, IsAdminOrReadOnly
+from django.db.models import Avg
 from .serializer import (
     UserSerializer,
     ConfirmationCodeSerializer,
     TokenSerializer,
     CategorySerializer,
     GenreSerializer,
+    TitleSerializer, TitleReadSerializer, TitleWriteSerializer,
 )
 
 
@@ -95,9 +100,9 @@ class CategoryViewSet(mixins.CreateModelMixin,
 
 
 class GenreViewSet(mixins.CreateModelMixin,
-                      mixins.ListModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
+                   mixins.ListModelMixin,
+                   mixins.DestroyModelMixin,
+                   viewsets.GenericViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
@@ -106,3 +111,43 @@ class GenreViewSet(mixins.CreateModelMixin,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+
+    queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
+    # serializer_class = TitleSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = PageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleReadSerializer
+        return TitleWriteSerializer
+
+    # def perform_create(self, serializer):
+    #     slug_genre = self.request.data.get('genre')
+    #     if isinstance(slug_genre, str):
+    #         slug_genre = self.request.data.getlist('genre')
+    #     slug_category = self.request.data.get('category')
+    #     genre = Genre.objects.filter(slug__in=slug_genre)
+    #     category = get_object_or_404(Category, slug=slug_category)
+    #     serializer.save(genre=genre, category=category)
+    #
+    # def perform_update(self, serializer):
+    #     slug_genre = self.request.data.get('genre')
+    #     slug_category = self.request.data.get('category')
+    #     if slug_genre and slug_category:
+    #         genre = Genre.objects.filter(slug__in=slug_genre)
+    #         category = get_object_or_404(Category, slug=slug_category)
+    #         serializer.save(genre=genre, category=category)
+    #     elif slug_genre:
+    #         genre = get_list_or_404(Genre, slug__in=slug_genre)
+    #         serializer.save(genre=genre)
+    #     elif slug_category:
+    #         category = get_object_or_404(Category, slug=slug_category)
+    #         serializer.save(category=category)
+    #     else:
+    #         serializer.save()
