@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from api.models import Category, Genre
+from api.models import Category, Genre, Title
 from users.models import User
 
 
@@ -47,4 +47,13 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ('name', 'slug',)
         lookup_field = 'slug'
+
+
+class GenreSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Genre
+        fields = ('name', 'slug',)
+        lookup_field = 'slug'
+
 

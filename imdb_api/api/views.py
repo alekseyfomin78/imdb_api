@@ -9,13 +9,14 @@ from rest_framework.permissions import AllowAny
 from django.core.mail import EmailMessage
 from users.models import User
 from .confirmation_code import ConfirmationCodeGenerator
-from .models import Category
+from .models import Category, Genre
 from .permissions import IsNotAuth, IsAdminOrReadOnly
 from .serializer import (
     UserSerializer,
     ConfirmationCodeSerializer,
     TokenSerializer,
     CategorySerializer,
+    GenreSerializer,
 )
 
 
@@ -92,3 +93,16 @@ class CategoryViewSet(mixins.CreateModelMixin,
     search_fields = ('name',)
     lookup_field = 'slug'
 
+
+class GenreViewSet(mixins.CreateModelMixin,
+                      mixins.ListModelMixin,
+                      mixins.DestroyModelMixin,
+                      viewsets.GenericViewSet):
+
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = PageNumberPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
