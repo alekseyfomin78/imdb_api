@@ -117,3 +117,11 @@ class ReviewWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('The review of this title already exists.')
         return data
 
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='username', required=False)
+    review = serializers.SlugRelatedField(queryset=Review.objects.all(), slug_field='text', required=False)
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'review', 'pub_date')
+        model = Comment

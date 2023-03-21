@@ -17,6 +17,12 @@ urlpatterns = [
     # reviews
     path('v1/titles/<int:title_id>/reviews/', view=views.ReviewListCreateView.as_view()),
     path('v1/titles/<int:title_id>/reviews/<int:review_id>/', view=views.ReviewRetrieveUpdateDestroyView.as_view()),
+    # comments
+    path('v1/titles/<int:title_id>/reviews/<int:review_id>/comments/', view=views.CommentListCreateView.as_view()),
+    path(
+        'v1/titles/<int:title_id>/reviews/<int:review_id>/comments/<int:comment_id>/',
+        view=views.CommentRetrieveUpdateDestroyView.as_view()
+    ),
 
     # jwt token
     path('v1/token/', view=TokenObtainPairView.as_view(), name='token_obtain_pair'),
