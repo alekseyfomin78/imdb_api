@@ -4,9 +4,9 @@ from rest_framework import status, filters, mixins, generics, views, viewsets
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
-from django.core.mail import EmailMessage
 from users.models import User
-from .confirmation_code import ConfirmationCodeGenerator
+from .service.confirmation_code import ConfirmationCodeGenerator
+from .service.sent_email import sent_email
 from .filters import TitleFilter
 from .models import Category, Genre, Title
 from .permissions import IsNotAuth, IsAdminOrReadOnly, IsAuthorOrModeratorOrAdminOrReadOnly
@@ -24,7 +24,6 @@ from .serializer import (
     CommentSerializer,
 )
 
-
 confirmation_code_generator = ConfirmationCodeGenerator()
 
 
@@ -34,7 +33,7 @@ class APISignup(views.APIView):
     Пользователь отправляет POST запрос с параметром email, если пользователя с таким email в БД не существует,
     то на этот email отправляется confirmation_code.
     """
-    permission_classes = [IsNotAuth]  # доступно только для не аутентифицированных пользователей
+    permission_classes = [IsNotAuth]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -52,8 +51,7 @@ class APISignup(views.APIView):
                        f"{confirmation_code}")
             to_email = str(request.data.get('email'))
 
-            email = EmailMessage(mail_subject, message, to=[to_email])
-            email.send()
+            sent_email(mail_subject, message, to_email)
 
             return Response({'email': serializer.data['email']}, status=status.HTTP_200_OK)
         else:
@@ -126,7 +124,7 @@ class TitleListCreateView(generics.ListCreateAPIView):
         else:
             return TitleWriteSerializer
 
-    # def perform_create(self, serializer):
+    # def perform_create(self, serializer):  # применяется для добавления доп. данных в serializer.save(...)
     #     slug_genre = self.request.data.get('genre')
     #     if isinstance(slug_genre, str):
     #         slug_genre = self.request.data.getlist('genre')
