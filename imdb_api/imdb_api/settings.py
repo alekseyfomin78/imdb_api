@@ -197,3 +197,34 @@ DJOSER = {
     'SEND_ACTIVATION_EMAIL': True,  # регистрация аккаунта через подтверждение по почте
     'SERIALIZERS': {},
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[%(asctime)s: %(levelname)s] %(message)s'
+        }
+    },
+    'handlers': {
+        'file_handler': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(os.path.abspath(os.path.pardir), 'debug.log'),
+            'formatter': 'verbose',
+
+        },
+        'stream_handler': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        }
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file_handler', 'stream_handler'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
