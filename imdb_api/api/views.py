@@ -146,3 +146,38 @@ class TitleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
             return TitleWriteSerializer
         else:
             return TitleReadSerializer
+
+
+class ReviewListCreateView(generics.ListCreateAPIView):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
+        return title.reviews.all()
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
+        serializer.save(author=self.request.user, title=title)
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ReviewReadSerializer
+        else:
+            return ReviewWriteSerializer
+
+
+class ReviewRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    lookup_field = 'title_id'
+
+    def get_queryset(self):
+        title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
+        return title.reviews.filter(id=self.kwargs.get('review_id'))
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return ReviewWriteSerializer
+        else:
+            return ReviewReadSerializer
+

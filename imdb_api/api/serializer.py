@@ -82,3 +82,38 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Title
+
+
+class ReviewReadSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='username')
+    title = serializers.SlugRelatedField(queryset=Title.objects.all(), slug_field='name')
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'score', 'pub_date', 'title')
+        model = Review
+
+
+class ReviewWriteSerializer(serializers.ModelSerializer):
+    score = serializers.IntegerField()
+
+    class Meta:
+        fields = ('id', 'text', 'score', 'pub_date')
+        model = Review
+
+    def validate_score(self, value):
+        if not 0 < value <= 10:
+            raise serializers.ValidationError('The score must be in the range of 1 to 10.')
+        return value
+
+    def validate(self, data):
+        request = self.context['request']
+        author = request.user
+        title_id = self.context.get('view').kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        if (
+                request.method == 'POST'
+                and Review.objects.filter(title=title, author=author).exists()
+        ):
+            raise serializers.ValidationError('The review of this title already exists.')
+        return data
+

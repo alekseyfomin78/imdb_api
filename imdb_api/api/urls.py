@@ -14,6 +14,9 @@ urlpatterns = [
     # titles
     path('v1/titles/', view=views.TitleListCreateView.as_view()),
     path('v1/titles/<int:title_id>/', view=views.TitleRetrieveUpdateDestroyView.as_view()),
+    # reviews
+    path('v1/titles/<int:title_id>/reviews/', view=views.ReviewListCreateView.as_view()),
+    path('v1/titles/<int:title_id>/reviews/<int:review_id>/', view=views.ReviewRetrieveUpdateDestroyView.as_view()),
 
     # jwt token
     path('v1/token/', view=TokenObtainPairView.as_view(), name='token_obtain_pair'),
