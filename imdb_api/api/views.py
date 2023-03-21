@@ -5,8 +5,8 @@ from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
 from users.models import User
-from .service.confirmation_code import ConfirmationCodeGenerator
-from .service.sent_email import sent_email
+from .utils.confirmation_code import ConfirmationCodeGenerator
+from .utils.sent_email import sent_email
 from .filters import TitleFilter
 from .models import Category, Genre, Title
 from .permissions import IsNotAuth, IsAdminOrReadOnly, IsAuthorOrModeratorOrAdminOrReadOnly
