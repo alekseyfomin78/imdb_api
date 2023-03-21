@@ -21,6 +21,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # api
     path('api/', include('api.urls')),
+    path('api-auth/', include('rest_framework.urls')),
     # api doc
     path('redoc/', TemplateView.as_view(template_name='redoc.html'), name='redoc'),
 

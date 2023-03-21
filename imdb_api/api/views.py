@@ -1,19 +1,15 @@
-from django.shortcuts import get_list_or_404
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework import status, filters, mixins
-from rest_framework.views import APIView
-from rest_framework import viewsets
+from rest_framework import status, filters, mixins, generics, views, viewsets
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import AllowAny
+from rest_framework import permissions
 from django.core.mail import EmailMessage
 from users.models import User
 from .confirmation_code import ConfirmationCodeGenerator
 from .filters import TitleFilter
 from .models import Category, Genre, Title
-from .permissions import IsNotAuth, IsAdminOrReadOnly
+from .permissions import IsNotAuth, IsAdminOrReadOnly, IsAuthorOrModeratorOrAdminOrReadOnly
 from django.db.models import Avg
 from .serializer import (
     UserSerializer,
@@ -21,14 +17,18 @@ from .serializer import (
     TokenSerializer,
     CategorySerializer,
     GenreSerializer,
-    TitleSerializer, TitleReadSerializer, TitleWriteSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
+    ReviewReadSerializer,
+    ReviewWriteSerializer,
+    CommentSerializer,
 )
 
 
 confirmation_code_generator = ConfirmationCodeGenerator()
 
 
-class APISignup(APIView):
+class APISignup(views.APIView):
     """
     API регистрации пользователя.
     Пользователь отправляет POST запрос с параметром email, если пользователя с таким email в БД не существует,
@@ -60,7 +60,7 @@ class APISignup(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class APIJWTToken(APIView):
+class APIJWTToken(views.APIView):
     """
     API подтверждения регистрации пользователя.
     Пользователь отправляет POST запрос с параметрами email и confirmation_code,
@@ -113,19 +113,18 @@ class GenreViewSet(mixins.CreateModelMixin,
     lookup_field = 'slug'
 
 
-class TitleViewSet(viewsets.ModelViewSet):
-
+class TitleListCreateView(generics.ListCreateAPIView):
     queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
-    # serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
-        if self.action in ('list', 'retrieve'):
+        if self.request.method == 'GET':
             return TitleReadSerializer
-        return TitleWriteSerializer
+        else:
+            return TitleWriteSerializer
 
     # def perform_create(self, serializer):
     #     slug_genre = self.request.data.get('genre')
@@ -135,19 +134,15 @@ class TitleViewSet(viewsets.ModelViewSet):
     #     genre = Genre.objects.filter(slug__in=slug_genre)
     #     category = get_object_or_404(Category, slug=slug_category)
     #     serializer.save(genre=genre, category=category)
-    #
-    # def perform_update(self, serializer):
-    #     slug_genre = self.request.data.get('genre')
-    #     slug_category = self.request.data.get('category')
-    #     if slug_genre and slug_category:
-    #         genre = Genre.objects.filter(slug__in=slug_genre)
-    #         category = get_object_or_404(Category, slug=slug_category)
-    #         serializer.save(genre=genre, category=category)
-    #     elif slug_genre:
-    #         genre = get_list_or_404(Genre, slug__in=slug_genre)
-    #         serializer.save(genre=genre)
-    #     elif slug_category:
-    #         category = get_object_or_404(Category, slug=slug_category)
-    #         serializer.save(category=category)
-    #     else:
-    #         serializer.save()
+
+
+class TitleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
+    permission_classes = (IsAdminOrReadOnly,)
+    lookup_url_kwarg = 'title_id'
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return TitleWriteSerializer
+        else:
+            return TitleReadSerializer
