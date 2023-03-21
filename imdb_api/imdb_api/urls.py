@@ -24,5 +24,9 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     # api doc
     path('redoc/', TemplateView.as_view(template_name='redoc.html'), name='redoc'),
+    # auth
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.authtoken')),  # обычный токен
+    path('auth/', include('djoser.urls.jwt')),  # jwt токен
 
 ]
