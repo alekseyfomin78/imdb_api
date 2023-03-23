@@ -7,6 +7,9 @@ from rest_framework import permissions
 from users.models import User
 from .utils.confirmation_code import ConfirmationCodeGenerator
 from .utils.sent_email import sent_email
+from .utils.cache_functions import delete_cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from .filters import TitleFilter
 from .models import Category, Genre, Title
 from .permissions import IsNotAuth, IsAdminOrReadOnly, IsAuthorOrModeratorOrAdminOrReadOnly
@@ -118,20 +121,23 @@ class TitleListCreateView(generics.ListCreateAPIView):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
+    CACHE_KEY_PREFIX = "title-view"
+
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return TitleReadSerializer
         else:
             return TitleWriteSerializer
 
-    # def perform_create(self, serializer):  # применяется для добавления доп. данных в serializer.save(...)
-    #     slug_genre = self.request.data.get('genre')
-    #     if isinstance(slug_genre, str):
-    #         slug_genre = self.request.data.getlist('genre')
-    #     slug_category = self.request.data.get('category')
-    #     genre = Genre.objects.filter(slug__in=slug_genre)
-    #     category = get_object_or_404(Category, slug=slug_category)
-    #     serializer.save(genre=genre, category=category)
+    @method_decorator(cache_page(300, key_prefix=CACHE_KEY_PREFIX))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        # при добавлении нового title кэш очищается
+        delete_cache(self.CACHE_KEY_PREFIX)
+        return response
 
 
 class TitleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -139,11 +145,27 @@ class TitleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAdminOrReadOnly,)
     lookup_url_kwarg = 'title_id'
 
+    CACHE_KEY_PREFIX = "title-view"
+
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
             return TitleWriteSerializer
         else:
             return TitleReadSerializer
+
+    @method_decorator(cache_page(300, key_prefix=CACHE_KEY_PREFIX))
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        delete_cache(self.CACHE_KEY_PREFIX)
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        response = super().destroy(request, *args, **kwargs)
+        delete_cache(self.CACHE_KEY_PREFIX)
+        return response
 
 
 class ReviewListCreateView(generics.ListCreateAPIView):
