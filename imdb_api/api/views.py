@@ -6,7 +6,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
 from users.models import User
 from .utils.confirmation_code import ConfirmationCodeGenerator
-from .utils.sent_email import sent_email
+from .utils.send_email import send_email
+from .tasks import send_email_task
 from .utils.cache_functions import delete_cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -54,7 +55,8 @@ class APISignup(views.APIView):
                        f"{confirmation_code}")
             to_email = str(request.data.get('email'))
 
-            sent_email(mail_subject, message, to_email)
+            # send_email(mail_subject, message, to_email)
+            send_email_task.delay(mail_subject, message, to_email)  # celery
 
             return Response({'email': serializer.data['email']}, status=status.HTTP_200_OK)
         else:
